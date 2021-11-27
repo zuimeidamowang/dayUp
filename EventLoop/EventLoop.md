@@ -38,4 +38,4 @@
 5. 微任务执行结束了，开始检查 `macro Task` 的 `event queue`, 检查到 `setTimeout` ，执行。
 6. 这也就是为什么 后注册的 `promise.then` 会优先 先注册 的 `setTimeout` 执行的原因。
 
-![](/Users/huangleilei/Desktop/-/EventLoop/eventLoop.png)
+![](https://github.com/zuimeidamowang/dayUp/blob/a705687bae2872b415b5aa8754fb6ed6c5650a6f/EventLoop/eventLoop.png)
