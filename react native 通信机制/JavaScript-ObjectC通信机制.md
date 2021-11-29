@@ -6,13 +6,13 @@
 
 普通的`JS-OC`通信实际上很简单，`OC`向`JS`传信息有现成的接口，像`webview`提供的-`stringByEvaluatingJavaScriptFromString`方法可以直接在当前`context`上执行一段JS脚本，并且可以获取执行后的返回值，这个返回值就相当于`JS`向`OC`传递信息。`React Native`也是以此为基础，通过各种手段，实现了在`OC`定义一个模块方法，JS可以直接调用这个模块方法并还可以无缝衔接回调。
 
-![](/Users/huangleilei/Desktop/react native 通信机制1.jpeg)
+![](https://github.com/zuimeidamowang/dayUp/blob/28f633d9513a24513949209cea39211aece886cd/react%20native%20%E9%80%9A%E4%BF%A1%E6%9C%BA%E5%88%B6/react%20native%20%E9%80%9A%E4%BF%A1%E6%9C%BA%E5%88%B61.jpeg)
 
 `OC`端和`JS`端分别各有一个`bridge`，两个`bridge`都保存了同样一份模块配置表，`JS`调用`OC`模块方法时，通过`bridge`里的配置表把模块方法转为模块`ID`和方法`ID`传给`OC`，`OC`通过`bridge`的模块配置表找到对应的方法执行之。
 
 ## 2 调用流程
 
-![](/Users/huangleilei/Desktop/react native 通信机制2.jpeg)
+![](https://github.com/zuimeidamowang/dayUp/blob/28f633d9513a24513949209cea39211aece886cd/react%20native%20%E9%80%9A%E4%BF%A1%E6%9C%BA%E5%88%B6/react%20native%20%E9%80%9A%E4%BF%A1%E6%9C%BA%E5%88%B62.jpeg)
 
 1. `JS`端调用某个`OC`模块暴露出来的方法。
 
