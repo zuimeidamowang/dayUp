@@ -29,4 +29,4 @@ HTTPS（全称：Hyper Text Transfer Protocol over Secure Socket Layer），是�
 
 HTTPS 协议的主要功能基本都依赖于 TLS/SSL 协议，TLS/SSL 的功能实现主要依赖于三类基本算法：`散列函数` 、`对称加密`和`非对称加密`，其利用非对称加密实现身份认证和密钥协商，对称加密算法采用协商的密钥对数据加密，基于散列函数验证信息的完整性。
 
-![](/Users/huangleilei/Desktop/-/HTTPS/HTTPS1.png)
+![](https://github.com/zuimeidamowang/dayUp/blob/73d122da47a6c43798e484ef5874771aeda78982/HTTPS/HTTPS1.png)
