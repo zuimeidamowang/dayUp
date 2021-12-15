@@ -96,3 +96,37 @@ function Counter() {
 当我设置为异步更新，点击按钮延迟到3s之后去调用setCount函数，当我快速点击按钮时，也就是说在3s多次去触发更新，但是只有一次生效，因为 count 的值是没有变化的。
 
 当使用函数式更新 state 的时候，这种问题就没有了，因为它可以获取之前的 state 值，也就是代码中的 prevCount 每次都是最新的值。
+
+### 2.2 `useContext()`:共享状态钩子
+
+该钩子的作用是，在组件之间共享状态。关于Context这里不再赘述，其作用就是可以做状态的分发，在React16.X以后支持，避免了react逐层通过Props传递数据。
+ 下面是一个例子，现在假设有A组件和B组件需要共享一个状态。
+
+
+
+```jsx
+import React,{ useContext } from 'react'
+const Ceshi = () => {
+  const AppContext = React.createContext({})
+  const A =() => {
+    const { name } = useContext(AppContext)
+    return (
+        <p>我是A组件的名字{name}<span>我是A的子组件{name}</span></p>
+    )
+}
+const B =() => {
+  const { name } = useContext(AppContext)
+  return (
+      <p>我是B组件的名字{name}</p>
+  )
+}
+  return (
+    <AppContext.Provider value={{name: 'hook测试'}}>
+    <A/>
+    <B/>
+    </AppContext.Provider>
+  )
+}
+export default Ceshi 
+```
+
