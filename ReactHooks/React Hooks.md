@@ -156,3 +156,44 @@ useEffect(() => {
 实际使用中，由于副效应函数默认是每次渲染都会执行，所以清理函数不仅会在组件卸载时执行一次，每次副效应函数重新执行之前，也会执行一次，用来清理上一次渲染的副效应。
 
 使用useEffect()时，有一点需要注意。如果有多个副效应，应该调用多个useEffect()，而不应该合并写在一起。
+
+### 2.4 `useReducer()`:`Action`钩子
+
+```javascript
+const [state, dispatch] = useReducer(	
+  reducer,	
+  initialArg,	
+  init	
+);
+```
+
+`useState` 的替代方案。它接收一个形如 `(state, action) => newState` 的 reducer，并返回当前的 state 以及与其配套的 `dispatch` 方法。
+
+在某些场景下，`useReducer` 会比 `useState` 更适用，例如 state 逻辑较复杂且包含多个子值，或者下一个 state 依赖于之前的 state 等。并且，使用 `useReducer` 还能给那些会触发深更新的组件做性能优化，因为你可以向子组件传递 `dispatch` 而不是回调函数 。
+
+```javascript
+const initialState = {count: 0};	
+	
+function reducer(state, action) {	
+  switch (action.type) {	
+    case 'increment':	
+      return {count: state.count + 1};	
+    case 'decrement':	
+      return {count: state.count - 1};	
+    default:	
+      throw new Error();	
+  }	
+}	
+	
+function Counter() {	
+  const [state, dispatch] = useReducer(reducer, initialState);	
+  return (	
+    <>	
+      Count: {state.count}	
+      <button onClick={() => dispatch({type: 'increment'})}>+</button>	
+      <button onClick={() => dispatch({type: 'decrement'})}>-</button>	
+    </>	
+  );	
+}
+```
+
