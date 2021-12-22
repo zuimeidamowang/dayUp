@@ -1,79 +1,290 @@
-# `React18`新特性
+# `React Hooks`
 
-## 1 自动批处理以减少渲染
+## 1 为什么要有`React Hooks`
 
-批处理是 React将多个状态更新分组到单个重新渲染中以获得更好的性能。
+介绍`Hooks`之前，首先要给大家说一下`React`的组件创建方式，一种是**类组件**，一种是**纯函数组件**，并且`React`团队希望，组件不要变成复杂的容器，最好只是数据流的管道。开发者根据需要，组合管道即可。也就是说**组件的最佳写法应该是函数，而不是类。**
+ 但是我们知道，在以往开发中*类组件*和*纯函数组件*的区别是很大的，纯函数组件有着类组件不具备的多种特点，简单列举几条
 
-例如，如果你在同一个点击事件中有两个状态更新，React 总是将它们分批处理到一个重新渲染中。如果你运行下面的代码，你会看到每次点击时，React 只执行一次渲染，尽管你设置了两次状态
+- 纯函数组件**没有状态**
+- 纯函数组件**没有生命周期**
+- 纯函数组件没有`this`
+- 只能是纯函数
 
-这对性能非常有用，因为它避免了不必要的重新渲染。它还可以防止你的组件呈现仅更新一个状态变量的“半完成”状态，这可能会导致错误。
+这就注定，我们所推崇的函数组件，只能做UI展示的功能，涉及到状态的管理与切换，我们不得不用类组件或者redux，但我们知道类组件的也是有缺点的，比如，遇到简单的页面，你的代码会显得很重，并且每创建一个类组件，都要去继承一个`React`实例，至于`Redux`,更不用多说，很久之前`Redux`的作者就说过，“能用`React`解决的问题就不用`Redux`”,等等一系列的话。关于`React`类组件`redux`的作者又有话说
 
-但是在React 18以前只会对同步任务进行批处理，默认情况下，React 中不会对 promise、setTimeout、本机事件处理程序或任何其他事件中的更新进行批处理。
+> - 大型组件很难拆分和重构，也很难测试。
+> - 业务逻辑分散在组件的各个方法之中，导致重复逻辑或关联逻辑。
+> - 组件类引入了复杂的编程模式，比如 render props 和高阶组件。
 
-从 React 18 开始createRoot，所有更新都将自动批处理，无论它们来自何处。
+## 2 `React Hooks`的用法
 
-这意味着超时、承诺、本机事件处理程序或任何其他事件内的更新将以与 React 事件内的更新相同的方式进行批处理。
+### 2.1 `userState()`:状态钩子
 
-## 2 Suspense 的 SSR 支持
-
-这基本上是服务器端渲染 (SSR) 逻辑的扩展。在典型的 React SSR 应用程序中，会发生以下步骤：
-
-- 服务器获取需要在 UI 上显示的相关数据
-- 服务器将整个应用程序呈现为 HTML 并将其发送给客户端作为响应
-- 客户端下载 [JavaScript](https://cloud.tencent.com/product/sms?from=10680) 包（除了 HTML）
-- 在最后一步，客户端将 javascript 逻辑连接到 HTML（称为 hydration）
-
-典型 SSR 应用程序的问题在于，在下一步可以开始之前，必须立即完成整个应用程序的每个步骤。这会使您的应用程序在初始加载时变慢且无响应。
-
-React 18 正试图解决这个问题。<Suspense> 组件已经以这样的方式进行了革命性的改变，它将应用程序分解为更小的独立单元，这些单元经过提到的每个步骤。这样一旦用户看到内容，它就会变成互动的。
-
-## 3 startTransition
-
-我们将状态更新分为两类：
-
-- 紧急更新反应直接交互，如打字、悬停、拖动等。
-- 过渡更新将 UI 从一个视图过渡到另一个视图。
-
-单击、悬停、滚动或打字等紧急更新需要立即响应以匹配我们对物理对象行为方式的直觉。否则他们会觉得“错了”。
-
-然而，转换是不同的，因为用户不希望在屏幕上看到每个中间值。
-
-例如，当您在下拉列表中选择过滤器时，您希望过滤器按钮本身在您单击时立即响应。但是，实际结果可能会单独转换。
-
-一个小的延迟是难以察觉的，而且通常是预料之中的。如果在结果渲染完成之前再次更改过滤器，您只关心看到最新的结果。
-
-在典型的 React 应用程序中，大多数更新在概念上都是过渡更新。但出于向后兼容性的原因，过渡是可选的。
-
-默认情况下，React 18 仍然将更新处理为紧急更新，您可以通过将更新包装到startTransition.
-
-**在 React 18 之前，所有更新都被紧急渲染。**
-
-这意味着上面的两个状态仍然会同时呈现，并且仍然会阻止用户看到他们交互的反馈，直到一切都呈现出来。我们缺少的是一种告诉 React 哪些更新是紧急的，哪些不是的方法。
-
-新startTransitionAPI 通过让您能够将更新标记为“转换”来解决此问题：
-
-```javascript
-import  {  startTransition  }  from  'react' ;
-
-// 紧急：显示输入的内容
-setInputValue ( input ) ;
-
-// 将内部的任何状态更新标记为转换
-startTransition ( ( )  =>  { 
-  // Transition: 显示结果
-  setSearchQuery ( input ) ; 
-} ) ;
+```jsx
+import React, {useState} from 'react'
+const AddCount = () => {
+  const [ count, setCount ] = useState(0)
+  const addcount = () => {
+    let newCount = count
+    setCount(newCount+=1)
+  } 
+  return (
+    <>
+      <p>{count}</p>
+      <button onClick={addcount}>count++</button>
+    </>
+  )
+}
+export default AddCount 
 ```
 
-包装在其中的更新startTransition被视为非紧急处理，如果出现更紧急的更新（如点击或按键），则会中断。
+通过上面的代码，我们实现了一个功能完全一样的计数器，代码看起来更加的轻便简洁，没有了继承，没有了渲染逻辑，没有了生命周期等。这就是`hooks`存在的意义。
+ 在`useState()`中，它接受状态的初始值作为参数，即上例中计数的初始值，它返回一个数组，其中数组第一项为一个变量，指向状态的当前值。类似`this.state`,第二项是一个函数，用来更新状态,类似`setState`。该函数的命名，我们约定为`set`前缀加状态的变量名。
 
-如果用户中断转换（例如，连续输入多个字符），React 将抛出未完成的陈旧渲染工作，仅渲染最新更新。
+如果新的 `state` 需要通过使用先前的 `state` 计算得出，那么可以将函数传递给` setState`。该函数将接收先前的 `state`，并返回一个更新后的值。下面的计数器组件示例展示了`setState` 的两种用法：
 
-Transitions 可让您保持大多数交互敏捷，即使它们导致显着的 UI 更改。它们还可以让您避免浪费时间渲染不再相关的内容。
+```javascript
+function Counter() {
+  const [count, setCount] = useState(0);
+  function handleClick() {
+    setCount(count + 1)
+  }
+  function handleClickFn() {
+    setCount((prevCount) => {
+      return prevCount + 1
+    })
+  }
+  return (
+    <>
+      Count: {count}
+      <button onClick={handleClick}>+</button>
+      <button onClick={handleClickFn}>+</button>
+    </>
+  );
+}
 
-### **我可以在哪里使用它？**
+```
 
-您可以使用startTransition来包装要移动到后台的任何更新。通常，这些类型的更新分为两类：
+两种方式的区别
+注意上面的代码，`handleClick`和`handleClickFn`一个是通过一个新的 `state` 值更新，一个是通过函数式更新返回新的` state`。现在这两种写法没有任何区别，但是如果是异步更新的话，那你就要注意了，他们是有区别的，来看下面例子：
 
-- 缓慢渲染：这些更新需要时间，因为 React 需要执行大量工作才能转换 UI 以显示结果。
-- 慢速网络：这些更新需要时间，因为 React 正在等待来自网络的一些数据。此用例与 Suspense 紧密集成。
+```javascript
+function Counter() {
+  const [count, setCount] = useState(0);
+  function handleClick() {
+    setTimeout(() => {
+      setCount(count + 1)
+    }, 3000);
+  }
+  function handleClickFn() {
+    setTimeout(() => {
+      setCount((prevCount) => {
+        return prevCount + 1
+      })
+    }, 3000);
+  }
+  return (
+    <>
+      Count: {count}
+      <button onClick={handleClick}>+</button>
+      <button onClick={handleClickFn}>+</button>
+    </>
+  );
+}
+```
+
+当我设置为异步更新，点击按钮延迟到3s之后去调用`setCount`函数，当我快速点击按钮时，也就是说在3s多次去触发更新，但是只有一次生效，因为 `count` 的值是没有变化的。
+
+当使用函数式更新` state` 的时候，这种问题就没有了，因为它可以获取之前的 `state` 值，也就是代码中的 `prevCount` 每次都是最新的值。
+
+### 2.2 `useContext()`:共享状态钩子
+
+该钩子的作用是，在组件之间共享状态。关于`Context`这里不再赘述，其作用就是可以做状态的分发，在`React16.X`以后支持，避免了`react`逐层通过`Props`传递数据。
+ 下面是一个例子，现在假设有A组件和B组件需要共享一个状态。
+
+
+
+```jsx
+import React,{ useContext } from 'react'
+const Ceshi = () => {
+  const AppContext = React.createContext({})
+  const A =() => {
+    const { name } = useContext(AppContext)
+    return (
+        <p>我是A组件的名字{name}<span>我是A的子组件{name}</span></p>
+    )
+}
+const B =() => {
+  const { name } = useContext(AppContext)
+  return (
+      <p>我是B组件的名字{name}</p>
+  )
+}
+  return (
+    <AppContext.Provider value={{name: 'hook测试'}}>
+    <A/>
+    <B/>
+    </AppContext.Provider>
+  )
+}
+export default Ceshi 
+```
+
+### 2.3 `useEffect()`:副作用钩子
+
+```jsx
+useEffect(() => {},[array])
+```
+
+`useEffect()`接受两个参数，第一个参数是你要进行的异步操作，第二个参数是一个数组，用来给出Effect的依赖项。只要这个数组发生变化，`useEffect()`就会执行。当第二项省略不填时，`useEffect()`会在每次组件渲染时执行。这一点类似于类组件的`componentDidMount`。
+
+副效应是随着组件加载而发生的，那么组件卸载时，可能需要清理这些副效应。
+useEffect()允许返回一个函数，在组件卸载时，执行该函数，清理副效应。如果不需要清理副效应，useEffect()就不用返回任何值。
+
+```javascript
+useEffect(() => {
+  const subscription = props.source.subscribe();
+  return () => {
+    subscription.unsubscribe();
+  };
+}, [props.source]);
+```
+
+
+上面例子中，useEffect()在组件加载时订阅了一个事件，并且返回一个清理函数，在组件卸载时取消订阅。
+
+实际使用中，由于副效应函数默认是每次渲染都会执行，所以清理函数不仅会在组件卸载时执行一次，每次副效应函数重新执行之前，也会执行一次，用来清理上一次渲染的副效应。
+
+使用useEffect()时，有一点需要注意。如果有多个副效应，应该调用多个useEffect()，而不应该合并写在一起。
+
+### 2.4 `useReducer()`:`Action`钩子
+
+```javascript
+const [state, dispatch] = useReducer(	
+  reducer,	
+  initialArg,	
+  init	
+);
+```
+
+`useState` 的替代方案。它接收一个形如 `(state, action) => newState` 的 reducer，并返回当前的 state 以及与其配套的 `dispatch` 方法。
+
+在某些场景下，`useReducer` 会比 `useState` 更适用，例如 state 逻辑较复杂且包含多个子值，或者下一个 state 依赖于之前的 state 等。并且，使用 `useReducer` 还能给那些会触发深更新的组件做性能优化，因为你可以向子组件传递 `dispatch` 而不是回调函数 。
+
+```javascript
+const initialState = {count: 0};	
+	
+function reducer(state, action) {	
+  switch (action.type) {	
+    case 'increment':	
+      return {count: state.count + 1};	
+    case 'decrement':	
+      return {count: state.count - 1};	
+    default:	
+      throw new Error();	
+  }	
+}	
+	
+function Counter() {	
+  const [state, dispatch] = useReducer(reducer, initialState);	
+  return (	
+    <>	
+      Count: {state.count}	
+      <button onClick={() => dispatch({type: 'increment'})}>+</button>	
+      <button onClick={() => dispatch({type: 'decrement'})}>-</button>	
+    </>	
+  );	
+}
+```
+
+### 2.5 `useCallback()`
+
+#### react优化方式
+
+1. 减少render次数
+2. 减少计算量
+
+- 下面的代码，当handleClick1时间触发时，PageB组件也会重新渲染
+
+```
+import React, { memo, useCallback, useState } from 'react'
+
+function PageA (props) {
+  const { onClick, children } = props
+  console.log(111, props)
+  return <div onClick={onClick}>{children}</div>
+}
+
+function PageB ({ onClick, name }) {
+  console.log(222)
+  return <div onClick={onClick}>{name}</div>
+}
+
+function UseCallback() {
+  const [a, setA] = useState(0)
+  const [b, setB] = useState(0)
+
+  const handleClick1 = () => {
+    setA(a + 1)
+  }
+
+  const handleClick2 =() => {
+    setB(b + 1)
+  }
+
+  return (
+    <>
+      <PageA onClick={handleClick1}>{a}</PageA>
+      <PageB onClick={handleClick2} name={b} />
+    </>
+  )
+}
+
+export default UseCallback
+```
+
+- 使用useCallback进行处理
+
+1. 点击事件handleClick1触发时，PageB组件也会重新渲染，当PageB组件比较耗时时，就会造成新能问题
+2. PageB组件重新渲染的原因在于每次重新渲染，onClick都会重新定义，即上次的与这次的不一致
+3. 思路：通过useCallback包裹onClick来达到缓存的效果，即useCallback的依赖项不变时不重新生成
+4. 用过memo方法包裹PageB组件，并且通过useCallback包裹PageB组件的onClick方法，memo与PureComponent比较类似，前者是对Function Component的优化，后者是对Class Component的优化，都会对传入组件的数据进行浅比较，useCallback则会保证handleClick2不会发生变化
+
+```javascript
+import React, { memo, useCallback, useState } from 'react'
+
+function PageA (props) {
+  const { onClick, children } = props
+  console.log(111, props)
+  return <div onClick={onClick}>{children}</div>
+}
+
+function PageB ({ onClick, name }) {
+  console.log(222)
+  return <div onClick={onClick}>{name}</div>
+}
+
+const PageC = memo(PageB)
+
+function UseCallback() {
+  const [a, setA] = useState(0)
+  const [b, setB] = useState(0)
+
+  const handleClick1 = () => {
+    setA(a + 1)
+  }
+
+  const handleClick2 = useCallback(() => {
+    setB(b + 1)
+  }, [b])
+
+  return (
+    <>
+      <PageA onClick={handleClick1}>{a}</PageA>
+      <PageC onClick={handleClick2} name={b} />
+    </>
+  )
+}
+
+export default UseCallback
+```
