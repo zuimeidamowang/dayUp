@@ -288,3 +288,46 @@ function UseCallback() {
 
 export default UseCallback
 ```
+
+### 2.6 `useMemo()`
+
+useMemo是针对一个函数，是否多次执行
+useMemo主要用来解决使用React hooks产生的无用渲染的性能问题
+在方法函数，由于不能使用shouldComponentUpdate处理性能问题，react hooks新增了useMemo
+
+useMemo使用
+如果useMemo(fn, arr)第二个参数匹配，并且其值发生改变，才会多次执行执行，否则只执行一次，如果为空数组[]，fn只执行一次
+
+```javascript
+export default () => {
+	let [isChild, setChild] = useState(false);
+ 
+	return (
+		<div>
+			<Child isChild={isChild} name="child" />
+			<button onClick={() => setChild(!isChild)}>改变Child</button>
+		</div>
+	);
+}
+ 
+let Child = (props) => {
+	let getRichChild = () => {
+		console.log('rich child');
+ 
+		return 'rich child';
+	}
+ 
+	let richChild = useMemo(() => {
+		//执行相应的函数
+		return getRichChild();
+	}, [props.name]);
+ 
+	return (
+		<div>
+			isChild: {props.isChild ? 'true' : 'false'}<br />
+			{richChild}
+		</div>
+	);
+}
+```
+
