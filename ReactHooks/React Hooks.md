@@ -331,3 +331,25 @@ let Child = (props) => {
 }
 ```
 
+### 2.7 `useRef()`
+
+```javascript
+const refContainer = useRef(initialValue);
+```
+
++ 返回一个可变的 `ref` 对象，该对象只有个 `current` 属性，初始值为传入的参数(` initialValue` )。
++ 返回的 `ref` 对象在组件的整个生命周期内保持不变
++ 当更新 `current `值时并不会` re-render` ，这是与`useState` 不同的地方
++ 更新 `useRef` 是 `side effect` (副作用)，所以一般写在 `useEffect` 或 `event handler` 里
++ `useRef` 类似于类组件的 `this`
+
+**需求：** 跨渲染取到状态值
+
+采用`useRef`作为组件实例的变量，保证获取到的数据肯定是最新的。
+
+1. useRef可以用来定义变量，这些变量更改之后不会引起页面重新渲染，比如分页获取数据时，存储页码。
+2. useRef也可以用来区分初始渲染还是更新(通过current有没值，具体见示例库里的didOrUpdate.tsx)
+3. 在DOM节点上定义ref属性，通过.current就可以获取到该DOM元素
+4. 通过forwardRef就可以给函数子组件传入ref属性。
+5. 使用useImperativeHandle用于定义暴露给父组件的ref方法
+   
