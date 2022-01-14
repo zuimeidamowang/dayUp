@@ -83,3 +83,214 @@ await 等到了它要等的东西，一个 Promise 对象，或者其它值，�
 > 看到上面的阻塞一词，心慌了吧……放心，这就是 await 必须用在 async 函数中的原因。async 函数调用不会造成阻塞，它内部所有的阻塞都被封装在一个 Promise 对象中异步执行。
 
 > 根据 [await - JavaScript | MDN](https://link.segmentfault.com/?enc=zbO%2BZiWJcrun9pJddfin6g%3D%3D.dB7VFs6B3Dwe%2F3vrSbxIRlHfzAbrtTnZfCJgUGgKow1woZxiXnQGDuhWUznlbSmaPsm%2BRJ7mQ5s0Mr32N5FLmyyex2tLdtEy%2Fl9oBlIhVODekb0y%2BUm6BMOjVjoPqGuqYzpfjuKjxMTpB1E7k3D51w%3D%3D)，`await` 等待的不是一个 Promise Like 对象的时候，相当于 `await Promise.resolve(...)`。
+
+## 2. async/await 帮我们干了啥
+
+### 2.1. 作个简单的比较
+
+上面已经说明了 async 会将其后的函数（函数表达式或 Lambda）的返回值封装成一个 Promise 对象，而 await 会等待这个 Promise 完成，并将其 resolve 的结果返回出来。
+
+现在举例，用 `setTimeout` 模拟耗时的异步操作，先来看看不用 async/await 会怎么写
+
+```javascript
+function takeLongTime() {
+    return new Promise(resolve => {
+        setTimeout(() => resolve("long_time_value"), 1000);
+    });
+}
+
+takeLongTime().then(v => {
+    console.log("got", v);
+});
+```
+
+如果改用 async/await 呢，会是这样
+
+```javascript
+function takeLongTime() {
+    return new Promise(resolve => {
+        setTimeout(() => resolve("long_time_value"), 1000);
+    });
+}
+
+async function test() {
+    const v = await takeLongTime();
+    console.log(v);
+}
+
+test();
+```
+
+眼尖的同学已经发现 `takeLongTime()` 没有申明为 `async`。实际上，`takeLongTime()` 本身就是返回的 Promise 对象，加不加 `async` 结果都一样，如果没明白，请回过头再去看看上面的“async 起什么作用”。
+
+> ###### 2021-11-13 补充
+>
+> 如果一个函数本身就返回 Promise 对象，加 `async` 和不加 `async` 还是有一点点区别：加了 `async` 之后外面得到 Promise 对象并不是 `return` 的那一个，参阅代码：
+>
+> ```javascript
+> (() => {
+>     let promise;
+>     async function test() {
+>         promise = new Promise(resolve => resolve(0));
+>         promise.mark = "hello";
+>         return promise;
+>     }
+> 
+>     const gotPromise = test();
+>     console.log(`is same object?: ${promise === gotPromise}`);  // false
+>     console.log(`promise.mark: ${promise.mark}`);               // hello
+>     console.log(`gotPromise.mark: ${gotPromise.mark}`);         // undefined
+> })();
+> ```
+>
+> 了解这一点后，如果我们需要在返回的 Promise 对象上附加一些东西，比如 `cancel()`，就得小心一点。
+
+又一个疑问产生了，这两段代码，两种方式对异步调用的处理（实际就是对 Promise 对象的处理）差别并不明显，甚至使用 async/await 还需要多写一些代码，那它的优势到底在哪？
+
+### 2.2. async/await 的优势在于处理 then 链
+
+单一的 Promise 链并不能发现 async/await 的优势，但是，如果需要处理由多个 Promise 组成的 then 链的时候，优势就能体现出来了（很有意思，Promise 通过 then 链来解决多层回调的问题，现在又用 async/await 来进一步优化它）。
+
+假设一个业务，分多个步骤完成，每个步骤都是异步的，而且依赖于上一个步骤的结果。我们仍然用 `setTimeout` 来模拟异步操作：
+
+```javascript
+/**
+ * 传入参数 n，表示这个函数执行的时间（毫秒）
+ * 执行的结果是 n + 200，这个值将用于下一步骤
+ */
+function takeLongTime(n) {
+    return new Promise(resolve => {
+        setTimeout(() => resolve(n + 200), n);
+    });
+}
+
+function step1(n) {
+    console.log(`step1 with ${n}`);
+    return takeLongTime(n);
+}
+
+function step2(n) {
+    console.log(`step2 with ${n}`);
+    return takeLongTime(n);
+}
+
+function step3(n) {
+    console.log(`step3 with ${n}`);
+    return takeLongTime(n);
+}
+```
+
+现在用 Promise 方式来实现这三个步骤的处理
+
+```javascript
+function doIt() {
+    console.time("doIt");
+    const time1 = 300;
+    step1(time1)
+        .then(time2 => step2(time2))
+        .then(time3 => step3(time3))
+        .then(result => {
+            console.log(`result is ${result}`);
+            console.timeEnd("doIt");
+        });
+}
+
+doIt();
+
+// c:\var\test>node --harmony_async_await .
+// step1 with 300
+// step2 with 500
+// step3 with 700
+// result is 900
+// doIt: 1507.251ms
+```
+
+输出结果 `result` 是 `step3()` 的参数 `700 + 200` = `900`。`doIt()` 顺序执行了三个步骤，一共用了 `300 + 500 + 700 = 1500` 毫秒，和 `console.time()/console.timeEnd()` 计算的结果一致。
+
+如果用 async/await 来实现呢，会是这样
+
+```javascript
+async function doIt() {
+    console.time("doIt");
+    const time1 = 300;
+    const time2 = await step1(time1);
+    const time3 = await step2(time2);
+    const result = await step3(time3);
+    console.log(`result is ${result}`);
+    console.timeEnd("doIt");
+}
+
+doIt();
+```
+
+结果和之前的 Promise 实现是一样的，但是这个代码看起来是不是清晰得多，几乎跟同步代码一样
+
+### 2.3. 还有更酷的
+
+现在把业务要求改一下，仍然是三个步骤，但每一个步骤都需要之前每个步骤的结果。
+
+```javascript
+function step1(n) {
+    console.log(`step1 with ${n}`);
+    return takeLongTime(n);
+}
+
+function step2(m, n) {
+    console.log(`step2 with ${m} and ${n}`);
+    return takeLongTime(m + n);
+}
+
+function step3(k, m, n) {
+    console.log(`step3 with ${k}, ${m} and ${n}`);
+    return takeLongTime(k + m + n);
+}
+```
+
+这回先用 async/await 来写：
+
+```javascript
+async function doIt() {
+    console.time("doIt");
+    const time1 = 300;
+    const time2 = await step1(time1);
+    const time3 = await step2(time1, time2);
+    const result = await step3(time1, time2, time3);
+    console.log(`result is ${result}`);
+    console.timeEnd("doIt");
+}
+
+doIt();
+
+// c:\var\test>node --harmony_async_await .
+// step1 with 300
+// step2 with 800 = 300 + 500
+// step3 with 1800 = 300 + 500 + 1000
+// result is 2000
+// doIt: 2907.387ms
+```
+
+除了觉得执行时间变长了之外，似乎和之前的示例没啥区别啊！别急，认真想想如果把它写成 Promise 方式实现会是什么样子？
+
+```javascript
+function doIt() {
+    console.time("doIt");
+    const time1 = 300;
+    step1(time1)
+        .then(time2 => {
+            return step2(time1, time2)
+                .then(time3 => [time1, time2, time3]);
+        })
+        .then(times => {
+            const [time1, time2, time3] = times;
+            return step3(time1, time2, time3);
+        })
+        .then(result => {
+            console.log(`result is ${result}`);
+            console.timeEnd("doIt");
+        });
+}
+
+doIt();
+```
+
+有没有感觉有点复杂的样子？那一堆参数处理，就是 Promise 方案的死穴—— 参数传递太麻烦了，看着就晕！
