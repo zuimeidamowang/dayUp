@@ -194,3 +194,133 @@ eventEmitter.emit('article2', 'Javascript 观察者模式');
     用户4订阅了: Javascript 观察者模式
 */
 ```
+
+## 三、 Vue 中的实现
+
+有了发布-订阅模式的知识后，我们来看下 Vue 中怎么实现 `$on` 和 `$emit` 的方法，直接看源码：
+
+```
+function eventsMixin (Vue) {
+    var hookRE = /^hook:/;
+    Vue.prototype.$on = function (event, fn) {
+        var this$1 = this;
+
+        var vm = this;
+        // event 为数组时，循环执行 $on
+        if (Array.isArray(event)) {
+            for (var i = 0, l = event.length; i < l; i++) {
+                this$1.$on(event[i], fn);
+            }
+        } else {
+            (vm._events[event] || (vm._events[event] = [])).push(fn);
+            // optimize hook:event cost by using a boolean flag marked at registration 
+            // instead of a hash lookup
+            if (hookRE.test(event)) {
+                vm._hasHookEvent = true;
+            }
+        }
+        return vm
+    };
+
+    Vue.prototype.$once = function (event, fn) {
+        var vm = this;
+        // 先绑定，后删除
+        function on () {
+        	vm.$off(event, on);
+            fn.apply(vm, arguments);
+        }
+        on.fn = fn;
+        vm.$on(event, on);
+        return vm
+    };
+
+    Vue.prototype.$off = function (event, fn) {
+        var this$1 = this;
+
+        var vm = this;
+        // all，若没有传参数，清空所有订阅
+        if (!arguments.length) {
+            vm._events = Object.create(null);
+            return vm
+        }
+        // array of events，events 为数组时，循环执行 $off
+        if (Array.isArray(event)) {
+            for (var i = 0, l = event.length; i < l; i++) {
+                this$1.$off(event[i], fn);
+            }
+            return vm
+        }
+        // specific event
+        var cbs = vm._events[event];
+        if (!cbs) {
+        	// 没有 cbs 直接 return this
+            return vm
+        }
+        if (!fn) {
+        	// 若没有 handler，清空 event 对应的缓存列表
+            vm._events[event] = null;
+            return vm
+        }
+        if (fn) {
+            // specific handler，删除相应的 handler
+            var cb;
+            var i$1 = cbs.length;
+            while (i$1--) {
+                cb = cbs[i$1];
+                if (cb === fn || cb.fn === fn) {
+                    cbs.splice(i$1, 1);
+                    break
+                }
+            }
+        }
+        return vm
+    };
+
+    Vue.prototype.$emit = function (event) {
+        var vm = this;
+        {
+        	// 传入的 event 区分大小写，若不一致，有提示
+            var lowerCaseEvent = event.toLowerCase();
+            if (lowerCaseEvent !== event && vm._events[lowerCaseEvent]) {
+                tip(
+                    "Event \"" + lowerCaseEvent + "\" is emitted in component " +
+                    (formatComponentName(vm)) + " but the handler is registered for \"" + event + "\". " +
+                    "Note that HTML attributes are case-insensitive and you cannot use " +
+                    "v-on to listen to camelCase events when using in-DOM templates. " +
+                    "You should probably use \"" + (hyphenate(event)) + "\" instead of \"" + event + "\"."
+                );
+            }
+        }
+        var cbs = vm._events[event];
+        if (cbs) {
+            cbs = cbs.length > 1 ? toArray(cbs) : cbs;
+            // 只取回调函数，不取 event
+            var args = toArray(arguments, 1);
+            for (var i = 0, l = cbs.length; i < l; i++) {
+                try {
+                    cbs[i].apply(vm, args);
+                } catch (e) {
+                    handleError(e, vm, ("event handler for \"" + event + "\""));
+                }
+            }
+        }
+        return vm
+    };
+}
+
+/***
+   * Convert an Array-like object to a real Array.
+   */
+function toArray (list, start) {
+    start = start || 0;
+    var i = list.length - start;
+    var ret = new Array(i);
+    while (i--) {
+      	ret[i] = list[i + start];
+    }
+    return ret
+}
+复制代码
+```
+
+实现思路大体相同，如上第二点中的第一条：实现思路。Vue 中实现的方法支持订阅数组事件。
