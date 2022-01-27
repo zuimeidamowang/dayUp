@@ -262,3 +262,152 @@ html {fons-size: 3.2px}
 rem不是银弹，这个世上也没有银弹，每个方案都有其优点，也有其缺点，学会做出选择和妥协
 
 rem仅能做到内容的缩放，但是对于非矢量资源，比如图片放大时的失真，并无法解决，这个以后有缘再讨论。
+
+## Rem布局方案
+
+通过上面可以得出实现缩放布局，共有四种方案，下面做一个对比
+
+| 缩放布局        | 用户体验 | 兼容性       | 依赖js | 超大屏幕 | 修正字体 |
+| :-------------- | :------- | :----------- | :----- | :------- | :------- |
+| rem+media-query | 可       | IOS4.1 AN2.1 | √      | √        | ×        |
+| rem+js          | 良       | IOS4.1 AN2.1 | ×      | √        | ×        |
+| rem+vw          | 优       | IOS6.1 AN4.4 | √      | √        | ×        |
+| vw              | 优       | IOS6.1 AN4.4 | √      | ×        | √        |
+
+如果要求兼容性，建议rem+js方案，需要解决的问题如下：
+
+- 修正body字体大小
+- 浏览器禁用js（可选）
+- 宽度限制，超大屏幕居中（可选）
+- 字体缩放（可选）
+
+如果兼容性满足，建议使用rem+vw方案，需要解决的问题如下：
+
+- 修正body字体大小
+- 宽度限制，超大屏幕居中（可选）
+- 字体缩放（可选）
+
+但是上面的方案还有个问题，就是分成100份的话，假设屏幕宽度320，此时html大小是3.2px，但浏览器支持最小字体大小是12px，怎么办？那就分成10份呗，只要把上面的100都换成10就好了
+
+下面给一个rem+js方案的完整例子，css的计算没有使用预处理器，这个很简单
+
+html代码如下
+
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <title>rem布局——rem+js</title>
+</head>
+<body>
+    <noscript>开启JavaScript，获得更好的体验</noscript>
+
+    <div class="p1">
+        宽度为屏幕宽度的50%，字体大小1.2em
+        <div class="s1">
+            字体大小1.2.em
+        </div>
+    </div>
+
+    <div class="p2">
+        宽度为屏幕宽度的40%，字体大小默认
+        <div class="s2">
+            字体大小1.2em
+        </div>
+    </div>
+</body>
+</html>
+```
+
+css代码如下
+
+```
+html {
+    font-size: 32px; /* 320/10 */
+}
+body {
+    font-size: 16px; /* 修正字体大小 */
+    /* 防止页面过宽 */
+    margin: auto;
+    padding: 0;
+    width: 10rem;
+    /* 防止页面过宽 */
+    outline: 1px dashed green;
+}
+
+/* js被禁止的回退方案 */
+@media screen and (min-width: 320px) {
+    html {font-size: 32px}
+    body {font-size: 16px;}
+}
+@media screen and (min-width: 481px) and (max-width:640px) {
+    html {font-size: 48px}
+    body {font-size: 18px;}
+}
+@media screen and (min-width: 641px) {
+    html {font-size: 64px}
+    body {font-size: 20px;}
+}
+
+noscript {
+    display: block;
+    border: 1px solid #d6e9c6;
+    padding: 3px 5px;
+    background: #dff0d8;
+    color: #3c763d;
+}
+/* js被禁止的回退方案 */
+
+.p1, .p2 {
+    border: 1px solid red;
+    margin: 10px 0;
+}
+
+.p1 {
+    width: 5rem;
+    height: 5rem;
+
+    font-size: 1.2em; /* 字体使用em */
+}
+
+.s1 {
+    font-size: 1.2em; /* 字体使用em */
+}
+
+.p2 {
+    width: 4rem;
+    height: 4rem;
+}
+.s2 {
+    font-size: 1.2em /* 字体使用em */
+}
+```
+
+js代码如下
+
+```
+var documentElement = document.documentElement;
+
+function callback() {
+    var clientWidth = documentElement.clientWidth;
+    // 屏幕宽度大于780，不在放大
+    clientWidth = clientWidth < 780 ? clientWidth : 780;
+    documentElement.style.fontSize = clientWidth / 10 + 'px';
+}
+
+document.addEventListener('DOMContentLoaded', callback);
+window.addEventListener('orientationchange' in window ? 'orientationchange' : 'resize', callback);
+```
+
+完整的例子如下
+
+- [rem+js的例子](http://yanhaijing.com/rem/rem-and-js.html)
+- [rem+vw的例子](http://yanhaijing.com/rem/rem-and-vw.html)
+- [vw的例子](http://yanhaijing.com/rem/vw.html)
+
+页面效果如下
+
+![img](https://yanhaijing.com/blog/520.png)
