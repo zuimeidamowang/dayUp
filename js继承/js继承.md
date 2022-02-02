@@ -129,11 +129,51 @@ instance2.sayAge(); //27
 
 ![img](https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2018/10/30/166c2c010c537ff8~tplv-t2oaga2asx-watermark.awebp)
 
-
+​    
 
 缺点：
 
-- 第一次调用`SuperType()`：给`SubType.prototype`写入两个属性name，color。
+- 第一次调用`SuperType()`：给`SubType.prototype`写入两个属性name，color。      
 - 第二次调用`SuperType()`：给`instance1`写入两个属性name，color。
 
 实例对象`instance1`上的两个属性就屏蔽了其原型对象SubType.prototype的两个同名属性。所以，组合模式的缺点就是在使用子类创建实例对象时，其原型中会存在两份相同的属性/方法。
+
+#### 4、原型式继承
+
+利用一个空对象作为中介，将某个对象直接赋值给空对象构造函数的原型。
+
+```
+function object(obj){
+  function F(){}
+  F.prototype = obj;
+  return new F();
+}
+复制代码
+```
+
+object()对传入其中的对象执行了一次`浅复制`，将构造函数F的原型直接指向传入的对象。
+
+```
+var person = {
+  name: "Nicholas",
+  friends: ["Shelby", "Court", "Van"]
+};
+
+var anotherPerson = object(person);
+anotherPerson.name = "Greg";
+anotherPerson.friends.push("Rob");
+
+var yetAnotherPerson = object(person);
+yetAnotherPerson.name = "Linda";
+yetAnotherPerson.friends.push("Barbie");
+
+alert(person.friends);   //"Shelby,Court,Van,Rob,Barbie"
+复制代码
+```
+
+缺点：
+
+- 原型链继承多个实例的引用类型属性指向相同，存在篡改的可能。
+- 无法传递参数
+
+另外，ES5中存在`Object.create()`的方法，能够代替上面的object方法。
