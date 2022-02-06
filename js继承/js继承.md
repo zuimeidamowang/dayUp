@@ -261,3 +261,26 @@ instance1.colors.push("3"); // ["red", "blue", "green", "3"]
 这个例子的高效率体现在它只调用了一次`SuperType` 构造函数，并且因此避免了在`SubType.prototype` 上创建不必要的、多余的属性。于此同时，原型链还能保持不变；因此，还能够正常使用`instanceof` 和`isPrototypeOf()`
 
 **这是最成熟的方法，也是现在库实现的方法**
+
+#### 7、混入方式继承多个对象
+
+```
+function MyClass() {
+     SuperClass.call(this);
+     OtherSuperClass.call(this);
+}
+
+// 继承一个类
+MyClass.prototype = Object.create(SuperClass.prototype);
+// 混合其它
+Object.assign(MyClass.prototype, OtherSuperClass.prototype);
+// 重新指定constructor
+MyClass.prototype.constructor = MyClass;
+
+MyClass.prototype.myMethod = function() {
+     // do something
+};
+复制代码
+```
+
+`Object.assign`会把  `OtherSuperClass`原型上的函数拷贝到 `MyClass`原型上，使 MyClass 的所有实例都可用 OtherSuperClass 的方法。
