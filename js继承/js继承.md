@@ -284,3 +284,79 @@ MyClass.prototype.myMethod = function() {
 ```
 
 `Object.assign`会把  `OtherSuperClass`原型上的函数拷贝到 `MyClass`原型上，使 MyClass 的所有实例都可用 OtherSuperClass 的方法。
+
+#### 8、ES6类继承extends
+
+`extends`关键字主要用于类声明或者类表达式中，以创建一个类，该类是另一个类的子类。其中`constructor`表示构造函数，一个类中只能有一个构造函数，有多个会报出`SyntaxError`错误,如果没有显式指定构造方法，则会添加默认的 `constructor`方法，使用例子如下。
+
+```
+class Rectangle {
+    // constructor
+    constructor(height, width) {
+        this.height = height;
+        this.width = width;
+    }
+    
+    // Getter
+    get area() {
+        return this.calcArea()
+    }
+    
+    // Method
+    calcArea() {
+        return this.height * this.width;
+    }
+}
+
+const rectangle = new Rectangle(10, 20);
+console.log(rectangle.area);
+// 输出 200
+
+-----------------------------------------------------------------
+// 继承
+class Square extends Rectangle {
+
+  constructor(length) {
+    super(length, length);
+    
+    // 如果子类中存在构造函数，则需要在使用“this”之前首先调用 super()。
+    this.name = 'Square';
+  }
+
+  get area() {
+    return this.height * this.width;
+  }
+}
+
+const square = new Square(10);
+console.log(square.area);
+// 输出 100
+复制代码
+```
+
+`extends`继承的核心代码如下，其实现和上述的寄生组合式继承方式一样
+
+```
+function _inherits(subType, superType) {
+  
+    // 创建对象，创建父类原型的一个副本
+    // 增强对象，弥补因重写原型而失去的默认的constructor 属性
+    // 指定对象，将新创建的对象赋值给子类的原型
+    subType.prototype = Object.create(superType && superType.prototype, {
+        constructor: {
+            value: subType,
+            enumerable: false,
+            writable: true,
+            configurable: true
+        }
+    });
+    
+    if (superType) {
+        Object.setPrototypeOf 
+            ? Object.setPrototypeOf(subType, superType) 
+            : subType.__proto__ = superType;
+    }
+}
+复制代码
+```
+
