@@ -27,7 +27,7 @@
 
 在使用 cypress open 命令首次打开 Cypress，Cypress 会自动进行初始化配置并**生成一个默认的文件夹结构**，如下图
 
-![](/Users/huangleilei/Desktop/-/Cypress/WechatIMG83.jpeg)
+![](https://github.com/zuimeidamowang/dayUp/blob/a68562c9f8d0e5296d363953671645164ccdc0d6/Cypress/WechatIMG83.jpeg)
 
 ### 前言
 
@@ -130,7 +130,7 @@
 
 ## 3 Cypress运行流程
 
-![](/Users/huangleilei/Desktop/-/Cypress/WechatIMG84.png)
+![](https://github.com/zuimeidamowang/dayUp/blob/a68562c9f8d0e5296d363953671645164ccdc0d6/Cypress/WechatIMG84.png)
 
 1. 运行测试后，Cypress 使用 **webpack** 将测试代码中的**所有模块 bundle** 到一个 js 文件中
 2. 每次测试首次加载 Cypress 时，内部 Cypress Web 应用程序先把自己**托管**在本地的一个随机端口上**【如：[http://localhost:65874](http://localhost:65874/)】**
